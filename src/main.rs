@@ -78,9 +78,9 @@ async fn main() -> Result<(), reqwest::Error> {
     let thumbnail_base64 = base64::encode(&buff);
 
     println!(
-        "color: {:?}
+        "colors: {:?}
 original_dimension: {}/{}
-lowest_dimension: {}/{}
+thumbnail_dimension: {}/{}
 base64_thumbnail: data:{};base64,{}",
         rgb_colors, width, height, thumbnail_width, thumbnail_height, mime_type, thumbnail_base64
     );
