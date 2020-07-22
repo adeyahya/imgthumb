@@ -1,0 +1,16 @@
+[package]
+name = "imgthumb"
+version = "0.1.0"
+authors = ["Ade Yahya <adeyahyaprasetyo@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+image = "0.23.7"
+dominant_color = "0.3.0"
+reqwest = "0.10.6"
+base64 = "0.12.3"
+immeta = "0.4.0"
+structopt = "0.3.13"
+tokio = {version = "0.2.22", features = ["full"]}
