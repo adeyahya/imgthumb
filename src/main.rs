@@ -68,7 +68,7 @@ async fn main() -> Result<(), reqwest::Error> {
         .map(|color| color.to_string())
         .collect();
 
-    let thumbnail_width = 5;
+    let thumbnail_width = 50;
     let thumbnail_height =
         scale_down_by_width(&(width as f32), &(height as f32), &(thumbnail_width as f32));
     let thumbnail = image.thumbnail((thumbnail_width) as u32, (thumbnail_height) as u32);
