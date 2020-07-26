@@ -1,4 +1,5 @@
 use image::{ColorType, DynamicImage, ImageOutputFormat};
+use std::env;
 use structopt::StructOpt;
 
 #[derive(Debug)]
@@ -26,7 +27,7 @@ fn scale_down_by_width(width: &f32, height: &f32, new_width: &f32) -> f32 {
     new_width / aspect_ratio
 }
 
-fn take_format<'a>(mime: &'a str, image: &'a DynamicImage) -> ImageOutputFormat {
+fn _take_format<'a>(mime: &'a str, image: &'a DynamicImage) -> ImageOutputFormat {
     let result = match mime {
         "image/jpeg" => ImageOutputFormat::Jpeg(std::mem::size_of_val(image) as u8),
         "image/png" => ImageOutputFormat::Png,
@@ -37,6 +38,26 @@ fn take_format<'a>(mime: &'a str, image: &'a DynamicImage) -> ImageOutputFormat 
     result
 }
 
+fn create_solid_color_image(width: usize, height: usize, color: &RgbColor<u8>) -> String {
+    let mut imgbuff = image::ImageBuffer::new(width as u32, height as u32);
+    for (_x, _y, pixel) in imgbuff.enumerate_pixels_mut() {
+        *pixel = image::Rgb([color.r, color.g, color.b]);
+    }
+
+    let mut dir = env::temp_dir();
+    dir.push("temp.png");
+    let path = dir.to_str().unwrap();
+    let mut buff = vec![];
+    imgbuff
+        .save_with_format(path, image::ImageFormat::Png)
+        .unwrap();
+    image::open(path)
+        .unwrap()
+        .write_to(&mut buff, ImageOutputFormat::Png)
+        .unwrap();
+    base64::encode(&buff)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
     let args = Cli::from_args();
@@ -44,7 +65,6 @@ async fn main() -> Result<(), reqwest::Error> {
 
     let image = image::load_from_memory(&response).unwrap();
     let metadata = immeta::load_from_buf(&response).unwrap();
-    let mime_type = metadata.mime_type();
     let width = metadata.dimensions().width;
     let height = metadata.dimensions().height;
 
@@ -63,26 +83,22 @@ async fn main() -> Result<(), reqwest::Error> {
             b: colors[n],
         })
     }
+    let thumbnail_width = 100;
+    let thumbnail_height =
+        scale_down_by_width(&(width as f32), &(height as f32), &(thumbnail_width as f32));
+    let thumbnail =
+        create_solid_color_image(thumbnail_width, thumbnail_height as usize, &rgb_colors[1]);
     let rgb_colors: Vec<String> = rgb_colors
         .into_iter()
         .map(|color| color.to_string())
         .collect();
 
-    let thumbnail_width = 50;
-    let thumbnail_height =
-        scale_down_by_width(&(width as f32), &(height as f32), &(thumbnail_width as f32));
-    let thumbnail = image.thumbnail((thumbnail_width) as u32, (thumbnail_height) as u32);
-    let mut buff = vec![];
-    let format = take_format(mime_type, &thumbnail);
-    thumbnail.write_to(&mut buff, format).unwrap();
-    let thumbnail_base64 = base64::encode(&buff);
-
     println!(
         "colors: {:?}
 original_dimension: {}/{}
 thumbnail_dimension: {}/{}
-base64_thumbnail: data:{};base64,{}",
-        rgb_colors, width, height, thumbnail_width, thumbnail_height, mime_type, thumbnail_base64
+base64_thumbnail: data:image/png;base64,{}",
+        rgb_colors, width, height, thumbnail_width, thumbnail_height, thumbnail
     );
 
     Ok(())
